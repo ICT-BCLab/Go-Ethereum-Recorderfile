@@ -1,0 +1,4 @@
+{
+  "dns": "test:123456@tcp(127.0.0.1:3306)/chainmaker_test?charset=utf8mb4\u0026parseTime=True\u0026loc=Local",
+  "port": 9528
+}
