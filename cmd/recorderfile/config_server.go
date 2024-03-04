@@ -9,30 +9,30 @@ import (
 )
 
 var (
-	serverPort   uint16                         = 9527 // 端口号
-	accessLock   sync.RWMutex                          // 读写锁（accessConfig）
+	serverPort uint16       = 9527 // 端口号
+	accessLock sync.RWMutex        // 读写锁（accessConfig）
 	//初始化accessConfig为全部开关开启
 	accessConfig = map[string]bool{
-		"All": true,
-		"TransactionPoolInputThroughputF": true,
-		"NetP2PTransmissionLatencyF": true,
-		"PeerMessageThroughputF": true,
-		"DbStateWriteRateF": true,
-		"DbStateReadRateF": true,
-		"TxQueueDelayF": true,
-		"BlockCommitDurationStartF": true,
-		"BlockCommitDurationEndF": true,
-		"BlockValidationEfficiencyStartF": true,
-		"BlockValidationEfficiencyEndF": true,
-		"TxDelayStartF": true,
-		"TxDelayEndF": true,
-		"BlockTxConflictRateF": true,
-		"ContractExecuteEfficiencyF": true,
-		"ConsensusTbftCostF": true,
-		"Cpumem": true
+		"All":                               true,
+		"block_commit_duration_end":         true,
+		"block_commit_duration_start":       true,
+		"block_validation_efficiency_end":   true,
+		"block_validation_efficiency_start": true,
+		"consensus_clique_cost":             true,
+		"contract_time":                     true,
+		"db_state_read_rate":                true,
+		"db_state_write_rate":               true,
+		"net_p2p_transmission_latency":      true,
+		"peer_message_throughput":           true,
+		"transaction_pool_input_throughput": true,
+		"tx_delay_end":                      true,
+		"tx_delay_start":                    true,
+		"tx_in_block_tps":                   true,
+		"tx_queue_delay":                    true,
+		"cpumem":                            true,
 	}
-	configLock   sync.RWMutex                          // 读写锁（configValue）
-	configValue  = make(map[string]interface{})        // accessconfig.yml(使用interface是因为Value可能是各种数据类型)
+	configLock  sync.RWMutex                   // 读写锁（configValue）
+	configValue = make(map[string]interface{}) // accessconfig.yml(使用interface是因为Value可能是各种数据类型)
 )
 
 // 启动配置监听器，如果用户命令行传入的端口号>0就使用传入的端口号

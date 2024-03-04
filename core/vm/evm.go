@@ -17,7 +17,6 @@
 package vm
 
 import (
-	"fmt"
 	"math/big"
 	"sync/atomic"
 	"time"
@@ -228,7 +227,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	// Record start time
 	StartTime = time.Now()
 	ContractAddr = addr.String()
-	fmt.Println("ContractAddr:asdadadadasdasdasdad")
+	// fmt.Println("ContractAddr:asdadadadasdasdasdad")
 	if isPrecompile {
 		ret, gas, err = RunPrecompiledContract(p, input, gas)
 	} else {

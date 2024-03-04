@@ -758,8 +758,8 @@ func ReadBlock(db ethdb.Reader, hash common.Hash, number uint64) *types.Block {
 	db_read_end := time.Now()
 	read_duration := db_read_end.Sub(db_read_begin)
 	time1 := time.Now()
-	str_db_state_write_rate := fmt.Sprintf("%s,%s,%s\n", time1.Format("2006-01-02 15:04:05.000000"), hash, read_duration) //需要写入csv的数据，切片类型
-	_ = recorderfile.Record(str_db_state_write_rate, "db_state_read_rate")
+	str_db_state_read_rate := fmt.Sprintf("%s,%s,%s\n", time1.Format("2006-01-02 15:04:05.000000"), hash, read_duration) //需要写入csv的数据，切片类型
+	_ = recorderfile.Record(str_db_state_read_rate, "db_state_read_rate")
 	return types.NewBlockWithHeader(header).WithBody(body.Transactions, body.Uncles).WithWithdrawals(body.Withdrawals)
 }
 
