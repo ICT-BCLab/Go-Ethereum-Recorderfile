@@ -11,7 +11,26 @@ import (
 var (
 	serverPort   uint16                         = 9527 // 端口号
 	accessLock   sync.RWMutex                          // 读写锁（accessConfig）
-	accessConfig = make(map[string]bool)               // accessconfig.yml
+	//初始化accessConfig为全部开关开启
+	accessConfig = map[string]bool{
+		"All": true,
+		"TransactionPoolInputThroughputF": true,
+		"NetP2PTransmissionLatencyF": true,
+		"PeerMessageThroughputF": true,
+		"DbStateWriteRateF": true,
+		"DbStateReadRateF": true,
+		"TxQueueDelayF": true,
+		"BlockCommitDurationStartF": true,
+		"BlockCommitDurationEndF": true,
+		"BlockValidationEfficiencyStartF": true,
+		"BlockValidationEfficiencyEndF": true,
+		"TxDelayStartF": true,
+		"TxDelayEndF": true,
+		"BlockTxConflictRateF": true,
+		"ContractExecuteEfficiencyF": true,
+		"ConsensusTbftCostF": true,
+		"Cpumem": true
+	}
 	configLock   sync.RWMutex                          // 读写锁（configValue）
 	configValue  = make(map[string]interface{})        // accessconfig.yml(使用interface是因为Value可能是各种数据类型)
 )
