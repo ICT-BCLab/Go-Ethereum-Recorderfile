@@ -132,7 +132,7 @@ func applyTransaction(msg types.Message, config *params.ChainConfig, gp *GasPool
 		receipt.ContractAddress = crypto.CreateAddress(evm.TxContext.Origin, tx.Nonce())
 	}
 	txHashStr := receipt.TxHash.String()
-	fmt.Println("cxzcxxcxcxcxzcxz")
+	// fmt.Println("cxzcxxcxcxcxzcxz")
 	str := fmt.Sprintf("%s,%s,%s,%s,%s\n", txHashStr, vm.ContractAddr, vm.StartTime.Format("2006-01-02 15:04:05.000000000"), vm.EndTime.Format("2006-01-02 15:04:05.000000000"), vm.ExecutionTime) //需要写入csv的数据，切片类型
 	_ = recorderfile.Record(str, "contract_time")
 	// Set the receipt logs and create the bloom filter.

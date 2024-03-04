@@ -94,7 +94,7 @@ func TransactionPoolInputThroughputInit() {
 	// defer TransactionPoolInputThroughputB.Flush()
 }
 
-func NetP2pTransmissionLatencyInit() {
+func NetP2PTransmissionLatencyInit() {
 	path := fmt.Sprintf("%s/net_p2p_transmission_latency.csv", Workdir)
 	NetP2PTransmissionLatencyF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
@@ -399,7 +399,7 @@ func CreateLog() {
 func ConfigInit() {
 	CreateLog()
 	TransactionPoolInputThroughputInit()
-	NetP2pTransmissionLatencyInit()
+	NetP2PTransmissionLatencyInit()
 	PeerMessageThroughputInit()
 	DbStateWriteRateInit()
 	DbStateReadRateInit()

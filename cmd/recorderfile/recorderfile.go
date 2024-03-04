@@ -6,10 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/ethereum/go-ethereum/log"
 )
 
 // ---一堆csvWriter---
@@ -97,7 +98,7 @@ func TransactionPoolInputThroughputInit() {
 	// defer TransactionPoolInputThroughputB.Flush()
 }
 
-func NetP2pTransmissionLatencyInit() {
+func NetP2PTransmissionLatencyInit() {
 	path := fmt.Sprintf("%s/net_p2p_transmission_latency.csv", Workdir)
 	NetP2PTransmissionLatencyF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
@@ -216,23 +217,6 @@ func BlockCommitDurationEndInit() {
 	log.Info("[block_commit_duration_end] init succeed")
 }
 
-func BlockValidationEfficiencyInit() {
-	path := fmt.Sprintf("%s/block_validation_efficiency.csv", Workdir)
-	BlockValidationEfficiencyF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println(BlockValidationEfficiencyF, "block_validation_efficiency open failed!")
-	}
-	defer BlockValidationEfficiencyF.Close()
-	str := "start_time,end_time,exec_time,tx_number\n" //需要写入csv的数据，切片类型
-
-	//写入一条数据，传入数据为切片(追加模式)
-	_, err1 := BlockValidationEfficiencyF.WriteString(str)
-	if err1 != nil {
-		log.Warn("[block_validation_efficiency] init failed")
-	}
-	log.Info("[block_validation_efficiency] init succeed")
-}
-
 func BlockValidationEfficiencyStartInit() {
 	path := fmt.Sprintf("%s/block_validation_efficiency_start.csv", Workdir)
 	BlockValidationEfficiencyStartF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
@@ -302,74 +286,6 @@ func TxDelayEndInit() {
 
 }
 
-func BlockTxConflictRateInit() {
-	path := fmt.Sprintf("%s/block_tx_conflict_rate.csv", Workdir)
-	BlockTxConflictRateF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println(BlockTxConflictRateF, "block_tx_conflict_rate open failed!")
-	}
-	defer BlockTxConflictRateF.Close()
-	str := "measure_time,conflict_count,block_height,block_tx_count\n" //需要写入csv的数据，切片类型
-
-	//写入一条数据，传入数据为切片(追加模式)
-	_, err1 := BlockTxConflictRateF.WriteString(str)
-	if err1 != nil {
-		log.Warn("[block_tx_conflict_rate] init failed")
-	}
-	log.Info("[block_tx_conflict_rate] init succeed")
-}
-
-func ContractExecuteEfficiencyInit() {
-	path := fmt.Sprintf("%s/contract_execute_efficiency.csv", Workdir)
-	ContractExecuteEfficiencyF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println(ContractExecuteEfficiencyF, "contract_execute_efficiency open failed!")
-	}
-	defer ContractExecuteEfficiencyF.Close()
-	str := "block_height,contract_start_time,contract_end_time,gas\n" //需要写入csv的数据，切片类型
-
-	//写入一条数据，传入数据为切片(追加模式)
-	_, err1 := ContractExecuteEfficiencyF.WriteString(str)
-	if err1 != nil {
-		log.Warn("[contract_execute_efficiency] init failed")
-	}
-	log.Info("[contract_execute_efficiency] init succeed")
-}
-
-func ConsensusTbftCostInit() {
-	path := fmt.Sprintf("%s/consensus_tbft_cost.csv", Workdir)
-	ConsensusTbftCostF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println(ConsensusTbftCostF, "consensus_tbft_cost open failed!")
-	}
-	defer ConsensusTbftCostF.Close()
-	str := "ID,Tbfttimestamp,Height,Round,Proposal,Prevote,Precommit,Commit,RoundTotalTime,HeightTotalTime\n" //需要写入csv的数据，切片类型
-
-	// 写入一条数据，传入数据为切片(追加模式)
-	_, err1 := ConsensusTbftCostF.WriteString(str)
-	if err1 != nil {
-		log.Warn("[consensus_tbft_cost] init failed")
-	}
-	log.Info("[consensus_tbft_cost] init succeed")
-}
-
-func BlockCommitDurationInit() {
-	path := fmt.Sprintf("%s/block_commit_duration.csv", Workdir)
-	BlockCommitDurationF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println(BlockCommitDurationF, "block_commit_duration open failed!")
-	}
-	defer BlockCommitDurationF.Close()
-	str := "TxHash,BeginTime,EndTime,ExecTime\n" //需要写入csv的数据，切片类型
-
-	// 写入一条数据，传入数据为切片(追加模式)
-	_, err1 := BlockCommitDurationF.WriteString(str)
-	if err1 != nil {
-		log.Warn("[block_commit_duration] init failed")
-	}
-	log.Info("[block_commit_duration] init succeed")
-}
-
 func TxinBlockTpsInit() {
 	path := fmt.Sprintf("%s/tx_in_block_tps.csv", Workdir)
 	TxinBlockTpsF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
@@ -403,7 +319,7 @@ func ConfigInit() {
 	CreateLog()
 	// 各个指标的新建csv文件的函数
 	TransactionPoolInputThroughputInit()
-	NetP2pTransmissionLatencyInit()
+	NetP2PTransmissionLatencyInit()
 	PeerMessageThroughputInit()
 	DbStateWriteRateInit()
 	DbStateReadRateInit()
@@ -415,12 +331,7 @@ func ConfigInit() {
 	BlockValidationEfficiencyEndInit()
 	TxDelayStartInit()
 	TxDelayEndInit()
-	BlockTxConflictRateInit()
-	ContractExecuteEfficiencyInit()
-	ConsensusTbftCostInit()
-	BlockCommitDurationInit()
 	TxinBlockTpsInit()
-	BlockValidationEfficiencyInit()
 	ConsensusCliqueCostInit()
 }
 
@@ -435,7 +346,7 @@ func Record(data string, filename string) error {
 	// accessLock.RLock()
 	allAccess := accessConfig["All"]
 	modelAccess := accessConfig[filename]
-	log.Println("allAccess", allAccess, "modelAccess", modelAccess)
+	log.Info(fmt.Sprintf("[%s] allAccess: %t, modelAccess: %t", filename, allAccess, modelAccess))
 	// accessLock.RUnlock()
 	// 开关的判别取决于两个map，查看配置文件对应的指标是否存在且为true
 	if allAccess && modelAccess {
@@ -443,7 +354,7 @@ func Record(data string, filename string) error {
 			path := fmt.Sprintf("%s/%s.csv", Workdir, filename)
 			file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 			if err != nil {
-				log.Warn("[%s] open failed", filename)
+				log.Warn(fmt.Sprintf("[%s] open failed", filename))
 				return nil
 			}
 			defer file.Close()
@@ -451,10 +362,10 @@ func Record(data string, filename string) error {
 			//写入一条数据，传入数据为切片(追加模式)
 			_, err = file.WriteString(data)
 			if err != nil {
-				log.Warn("[%s] record failed for %s", filename, err)
+				log.Warn(fmt.Sprintf("%s: record failed, err: %v", filename, err))
 				return err
 			}
-			log.Info("[%s] record succeed", filename)
+			log.Info(fmt.Sprintf("%s: record succeed", filename))
 			return nil
 		}, nil)
 	}
