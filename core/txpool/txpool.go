@@ -679,6 +679,8 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 	str1 := fmt.Sprintf("%s,%s,%s\n", tx_input_time.Format("2006-01-02 15:04:05.000000"), tx.Hash(), "in") //需要写入csv的数据，切片类型
 	_ = recorderfile.Record(str1, "tx_queue_delay")
 
+	// ------------------以下为源码就有的-------------------------
+
 	// If the transaction is already known, discard it
 	hash := tx.Hash()
 	if pool.all.Get(hash) != nil {

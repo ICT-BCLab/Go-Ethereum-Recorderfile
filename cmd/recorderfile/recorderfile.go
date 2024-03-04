@@ -12,6 +12,7 @@ import (
 	"runtime"
 )
 
+// ---一堆csvWriter---
 var TransactionPoolInputThroughputF *csv.Writer
 var TransactionPoolInputThroughputB *bufio.Writer
 var NetP2pTransmissionLatencyF *csv.Writer
@@ -35,6 +36,8 @@ var BlockValidationEfficiencyF *csv.Writer
 var BlockTxConflictRateF *csv.Writer
 var ContractExecuteEfficiencyF *csv.Writer
 var ConsensusTbftCostF *csv.Writer
+
+// ---存注册信息---
 var (
 	// registerInfo: key: modelName; value: register point info
 	registerInfo = make(map[string]string)
@@ -385,10 +388,10 @@ func TxinBlockTpsInit() {
 }
 
 func CreateLog() {
-	_, absPath, _, _ := runtime.Caller(0)
-	Workdir = filepath.Dir(filepath.Dir(filepath.Dir(absPath))) + "/log"
+	_, absPath, _, _ := runtime.Caller(0)                                // 获取caller的绝对路径
+	Workdir = filepath.Dir(filepath.Dir(filepath.Dir(absPath))) + "/log" // 在caller对应目录下新建log文件夹
 	_, err := os.ReadDir(Workdir)
-	if err != nil {
+	if err != nil { // 如果没有这个目录就尝试创建
 		err = os.MkdirAll(Workdir, fs.ModePerm)
 		if err != nil {
 			fmt.Println(err)
@@ -398,6 +401,7 @@ func CreateLog() {
 
 func ConfigInit() {
 	CreateLog()
+	// 各个指标的新建csv文件的函数
 	TransactionPoolInputThroughputInit()
 	NetP2pTransmissionLatencyInit()
 	PeerMessageThroughputInit()
@@ -421,11 +425,12 @@ func ConfigInit() {
 }
 
 func Start(port uint16) error {
-	ConfigInit()
-	startConfigListener(port)
+	ConfigInit()              // 初始化
+	startConfigListener(port) // 接收端口号 启动服务
 	return nil
 }
 
+// 具体的记录函数，需要传入数据和文件名
 func Record(data string, filename string) error {
 	// accessLock.RLock()
 	allAccess := accessConfig["All"]
