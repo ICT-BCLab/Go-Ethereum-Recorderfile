@@ -9,13 +9,14 @@ import (
 )
 
 var (
-	serverPort   uint16 = 9527
-	accessLock   sync.RWMutex
-	accessConfig = make(map[string]bool)
-	configLock   sync.RWMutex
-	configValue  = make(map[string]interface{})
+	serverPort   uint16                         = 9527 // 端口号
+	accessLock   sync.RWMutex                          // 读写锁（accessConfig）
+	accessConfig = make(map[string]bool)               // accessconfig.yml
+	configLock   sync.RWMutex                          // 读写锁（configValue）
+	configValue  = make(map[string]interface{})        // accessconfig.yml(使用interface是因为Value可能是各种数据类型)
 )
 
+// 启动配置监听器，如果用户命令行传入的端口号>0就使用传入的端口号
 func startConfigListener(port uint16) {
 	if port > 0 {
 		serverPort = port
@@ -24,9 +25,9 @@ func startConfigListener(port uint16) {
 }
 
 func runServer() error {
-	gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.ReleaseMode) // 错误信息将输出在log中
 	router := gin.Default()
-	config := router.Group("/config")
+	config := router.Group("/config") // 前缀是config
 	config.GET("/registerinfo", getRegisterInfo)
 	config.GET("/accessconfig", getAccessConfig)
 	config.PUT("/accessconfig", updateAccessConfig)
