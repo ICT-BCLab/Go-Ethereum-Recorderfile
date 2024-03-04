@@ -15,7 +15,7 @@ import (
 // ---一堆csvWriter---
 var TransactionPoolInputThroughputF *csv.Writer
 var TransactionPoolInputThroughputB *bufio.Writer
-var NetP2pTransmissionLatencyF *csv.Writer
+var NetP2PTransmissionLatencyF *csv.Writer
 var PeerMessageThroughputF *csv.Writer
 var DbStateWriteRateF *csv.Writer
 var DbStateReadRateF *csv.Writer
@@ -55,9 +55,9 @@ func ConsensusCliqueCostInit() {
 	// 写入一条数据，传入数据为切片(追加模式)
 	_, err1 := ConsensusCliqueCostF.WriteString(str)
 	if err1 != nil {
-		log.Println("[consensus_clique_cost] init failed")
+		log.Warn("[consensus_clique_cost] init failed")
 	}
-	log.Println("[consensus_clique_cost] init succeed")
+	log.Info("[consensus_clique_cost] init succeed")
 }
 
 func ContractTimeInit() {
@@ -72,9 +72,9 @@ func ContractTimeInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := ContractTimeF.WriteString(str)
 	if err1 != nil {
-		log.Println("[contract_time] init failed")
+		log.Warn("[contract_time] init failed")
 	}
-	log.Println("[contract_time] init succeed")
+	log.Info("[contract_time] init succeed")
 }
 
 func TransactionPoolInputThroughputInit() {
@@ -90,28 +90,28 @@ func TransactionPoolInputThroughputInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := TransactionPoolInputThroughputF.WriteString(str)
 	if err1 != nil {
-		log.Println("[transaction_pool_input_throughput] init failed")
+		log.Warn("[transaction_pool_input_throughput] init failed")
 	}
-	log.Println("[transaction_pool_input_throughput] init succeed")
+	log.Info("[transaction_pool_input_throughput] init succeed")
 	// TransactionPoolInputThroughputB = bufio.NewWriterSize(TransactionPoolInputThroughputF, 1024)
 	// defer TransactionPoolInputThroughputB.Flush()
 }
 
 func NetP2pTransmissionLatencyInit() {
 	path := fmt.Sprintf("%s/net_p2p_transmission_latency.csv", Workdir)
-	NetP2pTransmissionLatencyF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+	NetP2PTransmissionLatencyF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
-		fmt.Println(NetP2pTransmissionLatencyF, "net_p2p_transmission_latency open failed!")
+		fmt.Println(NetP2PTransmissionLatencyF, "net_p2p_transmission_latency open failed!")
 	}
-	defer NetP2pTransmissionLatencyF.Close()
+	defer NetP2PTransmissionLatencyF.Close()
 	str := "measure_time,peer_id,peer1_deliver_time,peer2_receive_time,peer2_deliver_time,peer1_receive_time\n" //需要写入csv的数据，切片类型
 
 	//写入一条数据，传入数据为切片(追加模式)
-	_, err1 := NetP2pTransmissionLatencyF.WriteString(str)
+	_, err1 := NetP2PTransmissionLatencyF.WriteString(str)
 	if err1 != nil {
-		log.Println("[net_p2p_transmission_latency] init failed")
+		log.Warn("[net_p2p_transmission_latency] init failed")
 	}
-	log.Println("[net_p2p_transmission_latency] init succeed")
+	log.Info("[net_p2p_transmission_latency] init succeed")
 }
 
 func PeerMessageThroughputInit() {
@@ -126,9 +126,9 @@ func PeerMessageThroughputInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := PeerMessageThroughputF.WriteString(str)
 	if err1 != nil {
-		log.Println("[peer_message_throughput] init failed")
+		log.Warn("[peer_message_throughput] init failed")
 	}
-	log.Println("[peer_message_throughput] init succeed")
+	log.Info("[peer_message_throughput] init succeed")
 }
 
 func DbStateWriteRateInit() {
@@ -143,9 +143,9 @@ func DbStateWriteRateInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := DbStateWriteRateF.WriteString(str)
 	if err1 != nil {
-		log.Println("[db_state_write_rate] init failed")
+		log.Warn("[db_state_write_rate] init failed")
 	}
-	log.Println("[db_state_write_rate] init succeed")
+	log.Info("[db_state_write_rate] init succeed")
 }
 
 func DbStateReadRateInit() {
@@ -155,14 +155,14 @@ func DbStateReadRateInit() {
 		fmt.Println(DbStateReadRateF, "db_state_read_rate open failed!")
 	}
 	defer DbStateReadRateF.Close()
-	str := "measure_time,block_hash,read_duration,\n" //需要写入csv的数据，切片类型
+	str := "measure_time,block_hash,read_duration\n" //需要写入csv的数据，切片类型
 
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := DbStateReadRateF.WriteString(str)
 	if err1 != nil {
-		log.Println("[db_state_read_rate] init failed")
+		log.Warn("[db_state_read_rate] init failed")
 	}
-	log.Println("[db_state_read_rate] init succeed")
+	log.Info("[db_state_read_rate] init succeed")
 }
 
 func TxQueueDelayInit() {
@@ -177,9 +177,9 @@ func TxQueueDelayInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := TxQueueDelayF.WriteString(str)
 	if err1 != nil {
-		log.Println("[tx_queue_delay] init failed")
+		log.Warn("[tx_queue_delay] init failed")
 	}
-	log.Println("[tx_queue_delay] init succeed")
+	log.Info("[tx_queue_delay] init succeed")
 }
 
 func BlockCommitDurationStartInit() {
@@ -194,9 +194,9 @@ func BlockCommitDurationStartInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := BlockCommitDurationStartF.WriteString(str)
 	if err1 != nil {
-		log.Println("[block_commit_duration_start] init failed")
+		log.Warn("[block_commit_duration_start] init failed")
 	}
-	log.Println("[block_commit_duration_start] init succeed")
+	log.Info("[block_commit_duration_start] init succeed")
 }
 
 func BlockCommitDurationEndInit() {
@@ -211,9 +211,9 @@ func BlockCommitDurationEndInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := BlockCommitDurationEndF.WriteString(str)
 	if err1 != nil {
-		log.Println("[block_commit_duration_end] init failed")
+		log.Warn("[block_commit_duration_end] init failed")
 	}
-	log.Println("[block_commit_duration_end] init succeed")
+	log.Info("[block_commit_duration_end] init succeed")
 }
 
 func BlockValidationEfficiencyInit() {
@@ -228,9 +228,9 @@ func BlockValidationEfficiencyInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := BlockValidationEfficiencyF.WriteString(str)
 	if err1 != nil {
-		log.Println("[block_validation_efficiency] init failed")
+		log.Warn("[block_validation_efficiency] init failed")
 	}
-	log.Println("[block_validation_efficiency] init succeed")
+	log.Info("[block_validation_efficiency] init succeed")
 }
 
 func BlockValidationEfficiencyStartInit() {
@@ -245,9 +245,9 @@ func BlockValidationEfficiencyStartInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := BlockValidationEfficiencyStartF.WriteString(str)
 	if err1 != nil {
-		log.Println("[block_validation_efficiency_start] init failed")
+		log.Warn("[block_validation_efficiency_start] init failed")
 	}
-	log.Println("[block_validation_efficiency_start] init succeed")
+	log.Info("[block_validation_efficiency_start] init succeed")
 }
 
 func BlockValidationEfficiencyEndInit() {
@@ -262,9 +262,9 @@ func BlockValidationEfficiencyEndInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := BlockValidationEfficiencyEndF.WriteString(str)
 	if err1 != nil {
-		log.Println("[block_validation_efficiency_end] init failed")
+		log.Warn("[block_validation_efficiency_end] init failed")
 	}
-	log.Println("[block_validation_efficiency_end] init succeed")
+	log.Info("[block_validation_efficiency_end] init succeed")
 }
 
 func TxDelayStartInit() {
@@ -279,9 +279,9 @@ func TxDelayStartInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := TxDelayStartF.WriteString(str)
 	if err1 != nil {
-		log.Println("[tx_delay_start] init failed")
+		log.Warn("[tx_delay_start] init failed")
 	}
-	log.Println("[tx_delay_start] init succeed")
+	log.Info("[tx_delay_start] init succeed")
 }
 
 func TxDelayEndInit() {
@@ -296,9 +296,9 @@ func TxDelayEndInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := TxDelayEndF.WriteString(str)
 	if err1 != nil {
-		log.Println("[tx_delay_end] init failed")
+		log.Warn("[tx_delay_end] init failed")
 	}
-	log.Println("[tx_delay_end] init succeed")
+	log.Info("[tx_delay_end] init succeed")
 
 }
 
@@ -314,9 +314,9 @@ func BlockTxConflictRateInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := BlockTxConflictRateF.WriteString(str)
 	if err1 != nil {
-		log.Println("[block_tx_conflict_rate] init failed")
+		log.Warn("[block_tx_conflict_rate] init failed")
 	}
-	log.Println("[block_tx_conflict_rate] init succeed")
+	log.Info("[block_tx_conflict_rate] init succeed")
 }
 
 func ContractExecuteEfficiencyInit() {
@@ -331,9 +331,9 @@ func ContractExecuteEfficiencyInit() {
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := ContractExecuteEfficiencyF.WriteString(str)
 	if err1 != nil {
-		log.Println("[contract_execute_efficiency] init failed")
+		log.Warn("[contract_execute_efficiency] init failed")
 	}
-	log.Println("[contract_execute_efficiency] init succeed")
+	log.Info("[contract_execute_efficiency] init succeed")
 }
 
 func ConsensusTbftCostInit() {
@@ -348,9 +348,9 @@ func ConsensusTbftCostInit() {
 	// 写入一条数据，传入数据为切片(追加模式)
 	_, err1 := ConsensusTbftCostF.WriteString(str)
 	if err1 != nil {
-		log.Println("[consensus_tbft_cost] init failed")
+		log.Warn("[consensus_tbft_cost] init failed")
 	}
-	log.Println("[consensus_tbft_cost] init succeed")
+	log.Info("[consensus_tbft_cost] init succeed")
 }
 
 func BlockCommitDurationInit() {
@@ -365,9 +365,9 @@ func BlockCommitDurationInit() {
 	// 写入一条数据，传入数据为切片(追加模式)
 	_, err1 := BlockCommitDurationF.WriteString(str)
 	if err1 != nil {
-		log.Println("[block_commit_duration] init failed")
+		log.Warn("[block_commit_duration] init failed")
 	}
-	log.Println("[block_commit_duration] init succeed")
+	log.Info("[block_commit_duration] init succeed")
 }
 
 func TxinBlockTpsInit() {
@@ -382,9 +382,9 @@ func TxinBlockTpsInit() {
 	// 写入一条数据，传入数据为切片(追加模式)
 	_, err1 := TxinBlockTpsF.WriteString(str)
 	if err1 != nil {
-		log.Println("[tx_in_block_tps] init failed")
+		log.Warn("[tx_in_block_tps] init failed")
 	}
-	log.Println("[tx_in_block_tps] init succeed")
+	log.Info("[tx_in_block_tps] init succeed")
 }
 
 func CreateLog() {
@@ -435,6 +435,7 @@ func Record(data string, filename string) error {
 	// accessLock.RLock()
 	allAccess := accessConfig["All"]
 	modelAccess := accessConfig[filename]
+	log.Println("allAccess", allAccess, "modelAccess", modelAccess)
 	// accessLock.RUnlock()
 	// 开关的判别取决于两个map，查看配置文件对应的指标是否存在且为true
 	if allAccess && modelAccess {
@@ -442,6 +443,7 @@ func Record(data string, filename string) error {
 			path := fmt.Sprintf("%s/%s.csv", Workdir, filename)
 			file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 			if err != nil {
+				log.Warn("[%s] open failed", filename)
 				return nil
 			}
 			defer file.Close()
@@ -449,8 +451,10 @@ func Record(data string, filename string) error {
 			//写入一条数据，传入数据为切片(追加模式)
 			_, err = file.WriteString(data)
 			if err != nil {
+				log.Warn("[%s] record failed for %s", filename, err)
 				return err
 			}
+			log.Info("[%s] record succeed", filename)
 			return nil
 		}, nil)
 	}

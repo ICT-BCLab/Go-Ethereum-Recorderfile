@@ -14,7 +14,7 @@ import (
 
 var TransactionPoolInputThroughputF *csv.Writer
 var TransactionPoolInputThroughputB *bufio.Writer
-var NetP2pTransmissionLatencyF *csv.Writer
+var NetP2PTransmissionLatencyF *csv.Writer
 var PeerMessageThroughputF *csv.Writer
 var DbStateWriteRateF *csv.Writer
 var DbStateReadRateF *csv.Writer
@@ -96,15 +96,15 @@ func TransactionPoolInputThroughputInit() {
 
 func NetP2pTransmissionLatencyInit() {
 	path := fmt.Sprintf("%s/net_p2p_transmission_latency.csv", Workdir)
-	NetP2pTransmissionLatencyF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
+	NetP2PTransmissionLatencyF, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
-		fmt.Println(NetP2pTransmissionLatencyF, "net_p2p_transmission_latency open failed!")
+		fmt.Println(NetP2PTransmissionLatencyF, "net_p2p_transmission_latency open failed!")
 	}
-	defer NetP2pTransmissionLatencyF.Close()
+	defer NetP2PTransmissionLatencyF.Close()
 	str := "measure_time,peer_id,peer1_deliver_time,peer2_receive_time,peer2_deliver_time,peer1_receive_time\n" //需要写入csv的数据，切片类型
 
 	//写入一条数据，传入数据为切片(追加模式)
-	_, err1 := NetP2pTransmissionLatencyF.WriteString(str)
+	_, err1 := NetP2PTransmissionLatencyF.WriteString(str)
 	if err1 != nil {
 		log.Println("[net_p2p_transmission_latency] init failed")
 	}

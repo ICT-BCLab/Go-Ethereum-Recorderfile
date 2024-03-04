@@ -1,6 +1,6 @@
 All: true
 TransactionPoolInputThroughputF: true
-NetP2pTransmissionLatencyF: true
+NetP2PTransmissionLatencyF: true
 PeerMessageThroughputF: true #
 DbStateWriteRateF: true 
 DbStateReadRateF: true
