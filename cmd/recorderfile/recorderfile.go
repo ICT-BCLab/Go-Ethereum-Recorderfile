@@ -32,11 +32,6 @@ var TxinBlockTpsF *csv.Writer
 var ConsensusCliqueCostF *csv.Writer
 
 var Workdir string
-var BlockCommitDurationF *csv.Writer
-var BlockValidationEfficiencyF *csv.Writer
-var BlockTxConflictRateF *csv.Writer
-var ContractExecuteEfficiencyF *csv.Writer
-var ConsensusTbftCostF *csv.Writer
 
 // ---存注册信息---
 var (
@@ -68,7 +63,7 @@ func ContractTimeInit() {
 		fmt.Println(ContractTimeF, "contract_time open failed!")
 	}
 	defer ContractTimeF.Close()
-	str := "TxHash,ContractAddr,StartTime,EndTime,ExecTime\n" //需要写入csv的数据，切片类型
+	str := "tx_hash,contract_addr,start_time,end_time,exec_time\n" //需要写入csv的数据，切片类型
 
 	//写入一条数据，传入数据为切片(追加模式)
 	_, err1 := ContractTimeF.WriteString(str)
@@ -293,7 +288,7 @@ func TxinBlockTpsInit() {
 		fmt.Println(TxinBlockTpsF, "tx_in_block_tps open failed!")
 	}
 	defer TxinBlockTpsF.Close()
-	str := "measure_time,block_height,block_hash,tx_numbert\n" //需要写入csv的数据，切片类型
+	str := "measure_time,block_height,block_hash,block_tx_count\n" //需要写入csv的数据，切片类型
 
 	// 写入一条数据，传入数据为切片(追加模式)
 	_, err1 := TxinBlockTpsF.WriteString(str)
@@ -371,18 +366,6 @@ func Record(data string, filename string) error {
 	}
 	return errors.New("close")
 }
-
-// 这里改掉之后峰值从1100到1300
-// func Record(data string, filename string) error {
-// 	allAccess := accessConfig["All"]
-// 	modelAccess := accessConfig[filename]
-// 	// accessLock.RUnlock()
-// 	// 开关的判别取决于两个map，查看配置文件对应的指标是否存在且为true
-// 	if allAccess && modelAccess {
-// 		return nil
-// 	}
-// 	return nil
-// }
 
 // GetConfigValue: get the configured value, which can be updated through endpoint [PUT] /config/configvalue
 func GetConfigValue(key string) (interface{}, bool) {

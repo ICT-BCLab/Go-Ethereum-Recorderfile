@@ -101,14 +101,17 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 func applyTransaction(msg types.Message, config *params.ChainConfig, gp *GasPool, statedb *state.StateDB, blockNumber *big.Int, blockHash common.Hash, tx *types.Transaction, usedGas *uint64, evm *vm.EVM) (*types.Receipt, error) {
 
 	// Create a new context to be used in the EVM environment.
+	// 创建交易上下文并充值EVM环境
 	txContext := NewEVMTxContext(msg)
 	evm.Reset(txContext, statedb)
 	// Apply the transaction to the current state (included in the env).
+	// 执行交易
 	result, err := ApplyMessage(evm, msg, gp)
 	if err != nil {
 		return nil, err
 	}
 	// Update the state with pending changes.
+	// 更新状态
 	var root []byte
 	if config.IsByzantium(blockNumber) {
 		statedb.Finalise(true)
@@ -118,6 +121,7 @@ func applyTransaction(msg types.Message, config *params.ChainConfig, gp *GasPool
 	*usedGas += result.UsedGas
 	// Create a new receipt for the transaction, storing the intermediate root and gas used
 	// by the tx.
+	// 更新收据、交易哈希、gas使用量
 	receipt := &types.Receipt{Type: tx.Type(), PostState: root, CumulativeGasUsed: *usedGas}
 	if result.Failed() {
 		receipt.Status = types.ReceiptStatusFailed
@@ -128,14 +132,16 @@ func applyTransaction(msg types.Message, config *params.ChainConfig, gp *GasPool
 	receipt.GasUsed = result.UsedGas
 
 	// If the transaction created a contract, store the creation address in the receipt.
+	// 创建合约交易，存储合约地址
 	if msg.To() == nil {
 		receipt.ContractAddress = crypto.CreateAddress(evm.TxContext.Origin, tx.Nonce())
 	}
 	txHashStr := receipt.TxHash.String()
-	// fmt.Println("cxzcxxcxcxcxzcxz")
+	// record合约执行时间
 	str := fmt.Sprintf("%s,%s,%s,%s,%s\n", txHashStr, vm.ContractAddr, vm.StartTime.Format("2006-01-02 15:04:05.000000000"), vm.EndTime.Format("2006-01-02 15:04:05.000000000"), vm.ExecutionTime) //需要写入csv的数据，切片类型
 	_ = recorderfile.Record(str, "contract_time")
 	// Set the receipt logs and create the bloom filter.
+	// 更新收据日志、创建布隆过滤器
 	receipt.Logs = statedb.GetLogs(tx.Hash(), blockNumber.Uint64(), blockHash)
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 	receipt.BlockHash = blockHash

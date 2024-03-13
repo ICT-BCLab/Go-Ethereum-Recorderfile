@@ -663,9 +663,9 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 // be added to the allowlist, preventing any associated transaction from being dropped
 // out of the pool due to pricing constraints.
 func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err error) {
-	//transaction_pool_input_throughtput
+	// record交易池输入通量
 	tx_input_time := time.Now()
-	source := strconv.Itoa(int(2))
+	source := ""
 	//判断是否为本地交易
 	if local {
 		source = strconv.Itoa(int(1))
@@ -675,30 +675,34 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 	str := fmt.Sprintf("%s,%s,%s\n", tx_input_time.Format("2006-01-02 15:04:05.000000"), tx.Hash(), source) //需要写入csv的数据，切片类型
 	_ = recorderfile.Record(str, "transaction_pool_input_throughput")
 
-	//tx_queue_delay
+	// record交易排队时延[进入交易池时间]
 	str1 := fmt.Sprintf("%s,%s,%s\n", tx_input_time.Format("2006-01-02 15:04:05.000000"), tx.Hash(), "in") //需要写入csv的数据，切片类型
 	_ = recorderfile.Record(str1, "tx_queue_delay")
 
-	// ------------------以下为源码就有的-------------------------
+	// record交易延迟[进入交易池时间]
+	str_tx_delay_start := fmt.Sprintf("%s,%s\n", tx_input_time.Format("2006-01-02 15:04:05.000000"), tx.Hash()) //需要写入csv的数据，切片类型
+	_ = recorderfile.Record(str_tx_delay_start, "tx_delay_start")
 
 	// If the transaction is already known, discard it
 	hash := tx.Hash()
-	if pool.all.Get(hash) != nil {
+	if pool.all.Get(hash) != nil { // 交易池已经有这个交易
 		log.Trace("Discarding already known transaction", "hash", hash)
 		knownTxMeter.Mark(1)
 		return false, ErrAlreadyKnown
 	}
 	// Make the local flag. If it's from local source or it's from the network but
 	// the sender is marked as local previously, treat it as the local transaction.
-	isLocal := local || pool.locals.containsTx(tx)
+	isLocal := local || pool.locals.containsTx(tx) // 本地未知交易
 
 	// If the transaction fails basic validation, discard it
+	// 验证交易
 	if err := pool.validateTx(tx, isLocal); err != nil {
 		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
 		invalidTxMeter.Mark(1)
 		return false, err
 	}
 	// If the transaction pool is full, discard underpriced transactions
+	// 交易池已满，删除gas price低的交易
 	if uint64(pool.all.Slots()+numSlots(tx)) > pool.config.GlobalSlots+pool.config.GlobalQueue {
 		// If the new transaction is underpriced, don't accept it
 		if !isLocal && pool.priced.Underpriced(tx) {
@@ -736,6 +740,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		}
 	}
 	// Try to replace an existing transaction in the pending pool
+	// 看看正在排队的交易中是否有当前交易的更新版本，如果有就替换
 	from, _ := types.Sender(pool.signer, tx) // already validated
 	if list := pool.pending[from]; list != nil && list.Overlaps(tx) {
 		// Nonce already pending, check if required price bump is met
@@ -761,7 +766,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		return old != nil, nil
 	}
 	// New transaction isn't replacing a pending one, push into queue
-	replaced, err = pool.enqueueTx(hash, tx, isLocal, true)
+	replaced, err = pool.enqueueTx(hash, tx, isLocal, true) // 加入到尚未执行队列中
 	if err != nil {
 		return false, err
 	}
@@ -774,7 +779,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 	if isLocal {
 		localGauge.Inc(1)
 	}
-	pool.journalTx(from, tx)
+	pool.journalTx(from, tx) // 加入到本地磁盘日志中
 
 	log.Trace("Pooled new future transaction", "hash", hash, "from", from, "to", tx.To())
 	return replaced, nil
@@ -917,12 +922,12 @@ func (pool *TxPool) AddRemote(tx *types.Transaction) error {
 func (pool *TxPool) addTxs(txs []*types.Transaction, local, sync bool) []error {
 	// Filter out known ones without obtaining the pool lock or recovering signatures
 	var (
-		errs = make([]error, len(txs))
-		news = make([]*types.Transaction, 0, len(txs))
+		errs = make([]error, len(txs))                 // 存储错误信息
+		news = make([]*types.Transaction, 0, len(txs)) // 存储新交易
 	)
 	for i, tx := range txs {
 		// If the transaction is known, pre-set the error slot
-		if pool.all.Get(tx.Hash()) != nil {
+		if pool.all.Get(tx.Hash()) != nil { // 交易已经在交易池中
 			errs[i] = ErrAlreadyKnown
 			knownTxMeter.Mark(1)
 			continue
@@ -931,21 +936,16 @@ func (pool *TxPool) addTxs(txs []*types.Transaction, local, sync bool) []error {
 		// possible and cache senders in transactions before
 		// obtaining lock
 		_, err := types.Sender(pool.signer, tx)
-		if err != nil {
+		if err != nil { // 交易签名无效
 			errs[i] = ErrInvalidSender
 			invalidTxMeter.Mark(1)
 			continue
 		}
-		// Accumulate all unknown transactions for deeper processing
-
-		//记录交易进入交易池的时间
-		tx_start_time := time.Now() // 记录当前时间作为时间戳
+		// Accumulate all unknown transactions for deeper processing                                                                 // 记录当前时间作为时间戳
 		news = append(news, tx)
-		str_tx_delay_start := fmt.Sprintf("%s,%s\n", tx_start_time.Format("2006-01-02 15:04:05.000000"), tx.Hash()) //需要写入csv的数据，切片类型
-		_ = recorderfile.Record(str_tx_delay_start, "tx_delay_start")
 
 	}
-	if len(news) == 0 {
+	if len(news) == 0 { // 没有新交易，直接返回错误信息
 		return errs
 	}
 
@@ -963,6 +963,7 @@ func (pool *TxPool) addTxs(txs []*types.Transaction, local, sync bool) []error {
 		nilSlot++
 	}
 	// Reorg the pool internals if needed and return
+	// 重新组织交易池
 	done := pool.requestPromoteExecutables(dirtyAddrs)
 	if sync {
 		<-done
@@ -1821,7 +1822,7 @@ func (t *lookup) Remove(hash common.Hash) {
 
 	delete(t.locals, hash)
 	delete(t.remotes, hash)
-	// 记录交易离开交易池的时间
+	// record交易排队时延[交易离开交易池时间]
 	tx_end_time := time.Now()
 	// Remove it from the list of known transactions
 	str := fmt.Sprintf("%s,%s,%s\n", tx_end_time.Format("2006-01-02 15:04:05.000000"), hash, "out")
