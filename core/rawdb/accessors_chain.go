@@ -745,13 +745,13 @@ func ReadLogs(db ethdb.Reader, hash common.Hash, number uint64, config *params.C
 // Note, due to concurrent download of header and block body the header and thus
 // canonical hash can be stored in the database but the body data not (yet).
 func ReadBlock(db ethdb.Reader, hash common.Hash, number uint64) *types.Block {
-	// 测量数据库状态写入速率
+	// record数据库读取速率
 	db_read_begin := time.Now()
-	header := ReadHeader(db, hash, number)
+	header := ReadHeader(db, hash, number) // 读取区块头
 	if header == nil {
 		return nil
 	}
-	body := ReadBody(db, hash, number)
+	body := ReadBody(db, hash, number) // 读取区块体
 	if body == nil {
 		return nil
 	}
@@ -760,7 +760,7 @@ func ReadBlock(db ethdb.Reader, hash common.Hash, number uint64) *types.Block {
 	time1 := time.Now()
 	str_db_state_read_rate := fmt.Sprintf("%s,%s,%s\n", time1.Format("2006-01-02 15:04:05.000000"), hash, read_duration) //需要写入csv的数据，切片类型
 	_ = recorderfile.Record(str_db_state_read_rate, "db_state_read_rate")
-	return types.NewBlockWithHeader(header).WithBody(body.Transactions, body.Uncles).WithWithdrawals(body.Withdrawals)
+	return types.NewBlockWithHeader(header).WithBody(body.Transactions, body.Uncles).WithWithdrawals(body.Withdrawals) // 返回详细信息
 }
 
 // WriteBlock serializes a block into the database, header and body separately.

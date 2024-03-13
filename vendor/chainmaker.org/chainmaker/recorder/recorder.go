@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	dbConnected = false
-	db          *gorm.DB
+	dbConnected = false  // 数据库是否已连接
+	db          *gorm.DB // gorm数据库连接对象
 	allModels   []interface{}
 	// registerInfo: key: modelName; value: register point info
 	registerInfo = make(map[string]string)
@@ -57,7 +57,7 @@ func Start(dns string, port uint16) error {
 	if strings.Contains(dns, "sqlite") {
 		// use sqlite, we don't have to start a mysql server,
 		// sqlite will create a db file locally
-		db, err = gorm.Open(sqlite.Open(dns), &gorm.Config{})
+		db, err = gorm.Open(sqlite.Open(dns), &gorm.Config{}) // &gorm.Config{}表示使用默认配置
 	} else {
 		db, err = gorm.Open(mysql.Open(dns), &gorm.Config{})
 	}

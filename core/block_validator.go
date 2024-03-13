@@ -54,12 +54,13 @@ func NewBlockValidator(config *params.ChainConfig, blockchain *BlockChain, engin
 // validated at this point.
 func (v *BlockValidator) ValidateBody(block *types.Block) error {
 	// Check whether the block is already imported.
-	str_block_validation_efficiency_start := fmt.Sprintf("%s,%s,%s\n", time.Now().Format("2006-01-02 15:04:05.000000"), block.Hash(), strconv.Itoa(len(block.Transactions()))) //需要写入csv的数据，切片类型
-	_ = recorderfile.Record(str_block_validation_efficiency_start, "block_validation_efficiency_end")
-
 	if v.bc.HasBlockAndState(block.Hash(), block.NumberU64()) {
 		return ErrKnownBlock
 	}
+
+	// record区块验证效率[验证数量]
+	str_block_validation_efficiency_start := fmt.Sprintf("%s,%s,%s\n", time.Now().Format("2006-01-02 15:04:05.000000"), block.Hash(), strconv.Itoa(len(block.Transactions()))) //需要写入csv的数据，切片类型
+	_ = recorderfile.Record(str_block_validation_efficiency_start, "block_validation_efficiency_end")
 
 	// Header validity is known at this point. Here we verify that uncles, transactions
 	// and withdrawals given in the block body match the header.

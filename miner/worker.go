@@ -721,34 +721,37 @@ func (w *worker) taskLoop() {
 // resultLoop is a standalone goroutine to handle sealing result submitting
 // and flush relative data to the database.
 func (w *worker) resultLoop() {
-	defer w.wg.Done()
-	for {
+	defer w.wg.Done() // 并发控制，当resultLoop返回时，计数器-1
+	for {             // 无限循环 处理打包结果
 		select {
-		case block := <-w.resultCh:
+		case block := <-w.resultCh: // 先从resultCh通道中获取打包区块
 			// Short circuit when receiving empty result.
-			if block == nil {
+			if block == nil { // 如果打包区块为空，则开始下一次循环
 				continue
 			}
 			// Short circuit when receiving duplicate result caused by resubmitting.
-			if w.chain.HasBlock(block.Hash(), block.NumberU64()) {
+			if w.chain.HasBlock(block.Hash(), block.NumberU64()) { // 通过区块的哈希和区块的高度判断是否已经存在，如果已经存在，则开始下一次循环
 				continue
 			}
 			var (
-				sealhash = w.engine.SealHash(block.Header())
-				hash     = block.Hash()
+				sealhash = w.engine.SealHash(block.Header()) // 计算sealHash（部分区块头信息的哈希）
+				hash     = block.Hash()                      // 计算整个区块头的哈希
 			)
+			// 查找pendingTasks中是否存在sealhash对应的任务
 			w.pendingMu.RLock()
 			task, exist := w.pendingTasks[sealhash]
 			w.pendingMu.RUnlock()
-			if !exist {
+			if !exist { // 没有找到
 				log.Error("Block found but no relative pending task", "number", block.Number(), "sealhash", sealhash, "hash", hash)
 				continue
 			}
+			// 找到了相关任务
 			// Different block could share same sealhash, deep copy here to prevent write-write conflict.
 			var (
 				receipts = make([]*types.Receipt, len(task.receipts))
 				logs     []*types.Log
 			)
+			// 复制收据和日志
 			for i, taskReceipt := range task.receipts {
 				receipt := new(types.Receipt)
 				receipts[i] = receipt
@@ -761,6 +764,7 @@ func (w *worker) resultLoop() {
 
 				// Update the block hash in all logs since it is now available and not when the
 				// receipt/log of individual transactions were created.
+				// 更新区块哈希
 				receipt.Logs = make([]*types.Log, len(taskReceipt.Logs))
 				for i, taskLog := range taskReceipt.Logs {
 					log := new(types.Log)
@@ -771,13 +775,14 @@ func (w *worker) resultLoop() {
 				logs = append(logs, receipt.Logs...)
 			}
 			// Commit block and state to database.
-			// 测量数据库状态写入速率
-			db_write_begin := time.Now()
+			// 提交区块和状态到数据库(写入这个节点自己维护的链上)
+			// record数据库写入速率
+			db_write_begin := time.Now() // 开始写入计时
 
 			_, err := w.chain.WriteBlockAndSetHead(block, receipts, logs, task.state, true)
 			// Calculate execution time
-			db_write_end := time.Now()
-			write_duration := db_write_end.Sub(db_write_begin)
+			db_write_end := time.Now()                         // 结束写入计时
+			write_duration := db_write_end.Sub(db_write_begin) // 耗时计算
 
 			time1 := time.Now()
 			blockNumber := block.Number()
@@ -789,13 +794,16 @@ func (w *worker) resultLoop() {
 				log.Error("Failed writing block to chain", "err", err)
 				continue
 			}
+			// 记录日志
 			log.Info("Successfully sealed new block", "number", block.Number(), "sealhash", sealhash, "hash", hash,
 				"elapsed", common.PrettyDuration(time.Since(task.createdAt)))
 
 			// Broadcast the block and announce chain insertion event
+			// 广播新区块
 			w.mux.Post(core.NewMinedBlockEvent{Block: block})
 
 			// Insert the block into the set of pending ones to resultLoop for confirmations
+			// 将新区块加入到待确认的区块集合中
 			w.unconfirmed.Insert(block.NumberU64(), block.Hash())
 
 			block_commit_duration_end_time := time.Now()
@@ -805,14 +813,15 @@ func (w *worker) resultLoop() {
 
 			// 计算交易数量
 			numTransactions := len(transactions)
-			//记录出块时刻
+			// record出块耗时[区块上链时刻]
 			str_block_commit_duration_end := fmt.Sprintf("%s,%s,%s,%s\n", block_commit_duration_end_time.Format("2006-01-02 15:04:05.000000"), blockNumber, hash, strconv.Itoa(numTransactions)) //需要写入csv的数据，切片类型
 			_ = recorderfile.Record(str_block_commit_duration_end, "block_commit_duration_end")
 
+			// record交易延迟[区块上链时刻]
 			for _, transaction := range transactions {
 				transactionID := transaction.Hash()
-				str_tx_delay_start := fmt.Sprintf("%s,%s,%s\n", block_commit_duration_end_time.Format("2006-01-02 15:04:05.000000"), blockNumber, transactionID) //需要写入csv的数据，切片类型
-				_ = recorderfile.Record(str_tx_delay_start, "tx_delay_end")
+				str_tx_delay_end := fmt.Sprintf("%s,%s,%s\n", block_commit_duration_end_time.Format("2006-01-02 15:04:05.000000"), blockNumber, transactionID) //需要写入csv的数据，切片类型
+				_ = recorderfile.Record(str_tx_delay_end, "tx_delay_end")
 			}
 
 		case <-w.exitCh:

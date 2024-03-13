@@ -221,7 +221,7 @@ func (c *Clique) Author(header *types.Header) (common.Address, error) {
 
 // VerifyHeader checks whether a header conforms to the consensus rules.
 func (c *Clique) VerifyHeader(chain consensus.ChainHeaderReader, header *types.Header, seal bool) error {
-	// 测量验证区块耗时
+	// record验证区块耗时
 	start_time := time.Now()
 
 	err := c.verifyHeader(chain, header, nil)
@@ -229,7 +229,6 @@ func (c *Clique) VerifyHeader(chain consensus.ChainHeaderReader, header *types.H
 	end_time := time.Now()
 	str_block_validation_efficiency_start := fmt.Sprintf("%s,%s,%s\n", end_time.Format("2006-01-02 15:04:05.000000"), header.Hash(), end_time.Sub(start_time)) //需要写入csv的数据，切片类型
 	_ = recorderfile.Record(str_block_validation_efficiency_start, "block_validation_efficiency_start")
-	fmt.Println(str_block_validation_efficiency_start)
 	return err
 }
 
@@ -516,20 +515,22 @@ func (c *Clique) verifySeal(snap *Snapshot, header *types.Header, parents []*typ
 // header for running the transactions on top.
 func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header) error {
 	// If the block isn't a checkpoint, cast a random vote (good enough for now)
-	header.Coinbase = common.Address{}
-	header.Nonce = types.BlockNonce{}
-	number := header.Number.Uint64()
+	header.Coinbase = common.Address{} // 保存投票时被投票人的地址
+	header.Nonce = types.BlockNonce{}  // 保存投票目的
+	number := header.Number.Uint64()   // number是当前要打包出区块的高度
 	// 记录Prepare初始时间
 	if flag_seal {
-		Clique_Start = time.Now()
+		Clique_Start = time.Now() // 开始共识时间
 	}
 
 	// Assemble the voting snapshot to check which votes make sense
+	// 创建快照，检查哪些投票是有意义的
 	snap, err := c.snapshot(chain, number-1, header.ParentHash, nil)
 	if err != nil {
 		return err
 	}
 	c.lock.RLock()
+	// 不是checkpoint，进行投票信息的填充
 	if number%c.config.Epoch != 0 {
 		// Gather all the proposals that make sense voting on
 		addresses := make([]common.Address, 0, len(c.proposals))
@@ -539,6 +540,7 @@ func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header
 			}
 		}
 		// If there's pending proposals, cast a vote on them
+		// 在待处理的提案中随机选择一个进行投票
 		if len(addresses) > 0 {
 			header.Coinbase = addresses[rand.Intn(len(addresses))]
 			if c.proposals[header.Coinbase] {
@@ -562,7 +564,9 @@ func (c *Clique) Prepare(chain consensus.ChainHeaderReader, header *types.Header
 	}
 	header.Extra = header.Extra[:extraVanity]
 
+	// 将要生成一个checkpoint
 	if number%c.config.Epoch == 0 {
+		// 填充签名者列表
 		for _, signer := range snap.signers() {
 			header.Extra = append(header.Extra, signer[:]...)
 		}
@@ -630,37 +634,40 @@ func (c *Clique) Seal(chain consensus.ChainHeaderReader, block *types.Block, res
 	header := block.Header()
 	// Sealing the genesis block is not supported
 	number := header.Number.Uint64()
-	if flag_seal {
+	if flag_seal { // 判断该区块之前是否已经被打包
 		start_time := time.Now()
 		flag_seal = false
-
-		// 记录出块耗时 block_commit_duration_start
+		// record出块耗时[开始生成区块时刻]
 		str_block_commit_duration_start := fmt.Sprintf("%s,%s\n", start_time.Format("2006-01-02 15:04:05.000000"), strconv.FormatUint(number, 10)) //需要写入csv的数据，切片类型
 		_ = recorderfile.Record(str_block_commit_duration_start, "block_commit_duration_start")
 	}
 
+	// 不能打包创世块
 	if number == 0 {
 		return errUnknownBlock
 	}
 	// For 0-period chains, refuse to seal empty blocks (no reward but would spin sealing)
+	// 对于0-period链，拒绝打包空块
 	if c.config.Period == 0 && len(block.Transactions()) == 0 {
 		return errors.New("sealing paused while waiting for transactions")
 	}
 	// Don't hold the signer fields for the entire sealing procedure
+	// 获取签名者和签名函数
 	c.lock.RLock()
 	signer, signFn := c.signer, c.signFn
 	c.lock.RUnlock()
 
 	// Bail out if we're unauthorized to sign a block
+	// 查看最近快照
 	snap, err := c.snapshot(chain, number-1, header.ParentHash, nil)
 	if err != nil {
 		return err
 	}
-	if _, authorized := snap.Signers[signer]; !authorized {
+	if _, authorized := snap.Signers[signer]; !authorized { // 当前节点不在授权列表中
 		return errUnauthorizedSigner
 	}
 	// If we're amongst the recent signers, wait for the next block
-	for seen, recent := range snap.Recents {
+	for seen, recent := range snap.Recents { // 最近已经出过块
 		if recent == signer {
 			// Signer is among recents, only wait if the current block doesn't shift it out
 			if limit := uint64(len(snap.Signers)/2 + 1); number < limit || seen > number-limit {
@@ -672,6 +679,7 @@ func (c *Clique) Seal(chain consensus.ChainHeaderReader, block *types.Block, res
 	// Sweet, the protocol permits us to sign the block, wait for our time
 	delay := time.Unix(int64(header.Time), 0).Sub(time.Now()) // nolint: gosimple
 
+	// 如果是Diff_Noturn状态，表明当前按理来说不该这个节点出块，等待出块时间到来，延迟一下
 	if header.Difficulty.Cmp(diffNoTurn) == 0 {
 		// It's not our turn explicitly to sign, delay it a bit
 		wiggle := time.Duration(len(snap.Signers)/2+1) * wiggleTime
@@ -679,6 +687,7 @@ func (c *Clique) Seal(chain consensus.ChainHeaderReader, block *types.Block, res
 
 		log.Trace("Out-of-turn signing requested", "wiggle", common.PrettyDuration(wiggle))
 	}
+	// 前面的if都没走：当前节点在授权列表中、最近没有出块、当前节点处于Diff_Inturn状态有较高出块权 --> 签名
 	// Sign all the things!
 	sighash, err := signFn(accounts.Account{Address: signer}, accounts.MimetypeClique, CliqueRLP(header))
 	if err != nil {
@@ -695,24 +704,24 @@ func (c *Clique) Seal(chain consensus.ChainHeaderReader, block *types.Block, res
 		case <-time.After(delay):
 		}
 
-		select {
+		select { // 打包完毕
 		case results <- block.WithSeal(header):
 			flag_seal = true
 			hash := block.WithSeal(header).Hash()
 
-			// 测量块内交易吞吐量
+			// record块内交易吞吐量
 			numTransactions := len(block.Transactions())
 			numTransactionsStr := strconv.Itoa(numTransactions)
 			measure_time := time.Now()
 			str_tx_in_block_tps := fmt.Sprintf("%s,%s,%s,%s\n", measure_time.Format("2006-01-02 15:04:05.000000"), strconv.FormatUint((header.Number.Uint64()), 10), hash, numTransactionsStr) //需要写入csv的数据，切片类型
 			_ = recorderfile.Record(str_tx_in_block_tps, "tx_in_block_tps")
 
-			//测量一轮共识耗时(Prepare()->Seal())
+			// record每轮共识耗时[clique](Prepare()->Seal())
 
-			//记录clique共识算法的耗时
-			Coust_Time := measure_time.Sub(Clique_Start)
+			// 记录clique共识算法的耗时
+			Cost_Time := measure_time.Sub(Clique_Start)
 
-			str_clique_cost := fmt.Sprintf("%s,%s,%s,%s\n", strconv.FormatUint((header.Number.Uint64()), 10), Clique_Start.Format("2006-01-02 15:04:05.000000000"), measure_time.Format("2006-01-02 15:04:05.000000"), Coust_Time) //需要写入csv的数据，切片类型
+			str_clique_cost := fmt.Sprintf("%s,%s,%s,%s\n", strconv.FormatUint((header.Number.Uint64()), 10), Clique_Start.Format("2006-01-02 15:04:05.000000000"), measure_time.Format("2006-01-02 15:04:05.000000"), Cost_Time) //需要写入csv的数据，切片类型
 			_ = recorderfile.Record(str_clique_cost, "consensus_clique_cost")
 		default:
 			log.Warn("Sealing result is not read by miner", "sealhash", SealHash(header))

@@ -180,19 +180,20 @@ func (evm *EVM) SetBlockContext(blockCtx BlockContext) {
 // execution error or failed value transfer.
 func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
 	// Fail if we're trying to execute above the call depth limit
-	if evm.depth > int(params.CallCreateDepth) {
+	if evm.depth > int(params.CallCreateDepth) { // 超过调用深度限制
 		return nil, gas, ErrDepth
 	}
 	// Fail if we're trying to transfer more than the available balance
-	if value.Sign() != 0 && !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
+	if value.Sign() != 0 && !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) { // 可用余额不足
 		return nil, gas, ErrInsufficientBalance
 	}
 
+	// 创建快照
 	snapshot := evm.StateDB.Snapshot()
-	p, isPrecompile := evm.precompile(addr)
+	p, isPrecompile := evm.precompile(addr) // 是否是预编译合约
 
 	if !evm.StateDB.Exist(addr) {
-		if !isPrecompile && evm.chainRules.IsEIP158 && value.Sign() == 0 {
+		if !isPrecompile && evm.chainRules.IsEIP158 && value.Sign() == 0 { // 调试模式下触发追踪器
 			// Calling a non existing account, don't do anything, but ping the tracer
 			if evm.Config.Debug {
 				if evm.depth == 0 {
@@ -205,9 +206,9 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 			}
 			return nil, gas, nil
 		}
-		evm.StateDB.CreateAccount(addr)
+		evm.StateDB.CreateAccount(addr) // 不是预编译合约也不是EIP158，记录新合约地址
 	}
-	evm.Context.Transfer(evm.StateDB, caller.Address(), addr, value)
+	evm.Context.Transfer(evm.StateDB, caller.Address(), addr, value) // 转账
 	// Capture the tracer start/end events in debug mode
 	if evm.Config.Debug {
 		if evm.depth == 0 {
@@ -224,16 +225,15 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 		}
 	}
 
-	// Record start time
+	// 记录开始时间
 	StartTime = time.Now()
 	ContractAddr = addr.String()
-	// fmt.Println("ContractAddr:asdadadadasdasdasdad")
-	if isPrecompile {
+	if isPrecompile { // 运行预编译合约
 		ret, gas, err = RunPrecompiledContract(p, input, gas)
-	} else {
+	} else { // 运行普通合约
 		// Initialise a new contract and set the code that is to be used by the EVM.
 		// The contract is a scoped environment for this execution context only.
-		code := evm.StateDB.GetCode(addr)
+		code := evm.StateDB.GetCode(addr) // 获取合约代码
 		if len(code) == 0 {
 			ret, err = nil, nil // gas is unchanged
 		} else {
@@ -247,10 +247,10 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 		}
 	}
 
-	// Record end time
+	// 记录结束时间
 	EndTime = time.Now()
 
-	// Calculate execution time
+	// 计算执行时间
 	ExecutionTime = EndTime.Sub(StartTime)
 
 	// When an error was returned by the EVM or when setting the creation code

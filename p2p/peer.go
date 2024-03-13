@@ -363,19 +363,22 @@ func (p *Peer) pingLoop() {
 }
 
 func (p *Peer) readLoop(errc chan<- error) {
-	defer p.wg.Done()
-	for {
-		msg, err := p.rw.ReadMsg()
+	defer p.wg.Done() // 并发控制，当readLoop返回时，计数器-1
+	for {             // 无限循环
+		msg, err := p.rw.ReadMsg() // 不断从连接会话中读取消息
+
+		// 如果消息大小>0 record节点收发消息总量--Received
 		if msg.Size > 0 {
 			str := fmt.Sprintf("%s,%s,%d\n", time.Now().Format("2006-01-02 15:04:05.000000"), "Received", msg.Size)
 			_ = recorderfile.Record(str, "peer_message_throughput")
 		}
+
 		if err != nil {
-			errc <- err
+			errc <- err // 将错误写入errc错误通道
 			return
 		}
-		msg.ReceivedAt = time.Now()
-		if err = p.handle(msg); err != nil {
+		msg.ReceivedAt = time.Now()          // 记录接收消息时间
+		if err = p.handle(msg); err != nil { // 调用handle()处理收到的消息
 			errc <- err
 			return
 		}
@@ -526,14 +529,15 @@ type protoRW struct {
 }
 
 func (rw *protoRW) WriteMsg(msg Msg) (err error) {
-	if msg.Code >= rw.Length {
+	if msg.Code >= rw.Length { // 消息的code比协议的长度大，说明是不支持的消息
 		return newPeerError(errInvalidMsgCode, "not handled")
 	}
-	msg.meterCap = rw.cap()
-	msg.meterCode = msg.Code
+	msg.meterCap = rw.cap()  // 设置协议容量
+	msg.meterCode = msg.Code // 设置消息码
 
-	msg.Code += rw.offset
+	msg.Code += rw.offset // 调整消息代码，把协议的偏移量加进去
 
+	// 如果消息大小>0 record节点收发消息总量--Sent
 	if msg.Size > 0 {
 		str := fmt.Sprintf("%s,%s,%s\n", time.Now().Format("2006-01-02 15:04:05.000000"), "Sent", strconv.Itoa(int(msg.Size)))
 		_ = recorderfile.Record(str, "peer_message_throughput")
